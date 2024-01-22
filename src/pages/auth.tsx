@@ -1,20 +1,40 @@
 import Image from "next/image";
 import { Inter } from "next/font/google";
-import { useMemo } from "react";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export default function Home() {
-  console.log(process.env.NEXT_PUBLIC_SALEFORCE_CLIENT_ID);
-  const loginURL = useMemo(() => {
-    const baseURL = process.env.NEXT_PUBLIC_SALEFORCE_ENDPOINT_URL;
-    const clientId = process.env.NEXT_PUBLIC_SALEFORCE_CLIENT_ID;
-    const redirectURI = process.env.NEXT_PUBLIC_SALEFORCE_REDIRECT_URL;
-    const scope = process.env.NEXT_PUBLIC_SALEFORCE_SCOPE;
+export default function Auth() {
+    const [accessToken, setAccessToken] = useState<string>("");
+    const router = useRouter();
+    const getAuthData = ()=> {
+        console.log(router.asPath);
+        const query = router.asPath.split("#")[1];
+        const params = new URLSearchParams(query);
+        console.log('access_token', params.get('access_token'));
+        console.log('refresh_token', params.get('refresh_token'));
+        setAccessToken(params.get('access_token') || "");
+        if(params.get('access_token')) {
+            fetchUserInfo(params.get('access_token') as string);
+        }
+    }
 
-    const url = new URL(`services/oauth2/authorize?response_type=token&client_id=${clientId}&redirect_uri=${redirectURI}&scope=${scope}`, baseURL);
-    return url.toString();
-  }, []);
+    const fetchUserInfo = async (access_token: string)=> {
+        if(!access_token) return;
+        const baseURL = process.env.NEXT_PUBLIC_SALEFORCE_ENDPOINT_URL;
+        const url = new URL("services/oauth2/userinfo", baseURL);
+        const response = await fetch(url.toString(), {
+            headers: {
+                Authorization: `Bearer ${access_token}`
+            }
+        });
+        const data = await response.json();
+    };
+
+    useEffect(()=> {
+        getAuthData();
+    }, [router]);
   return (
     <main
       className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
@@ -27,8 +47,9 @@ export default function Home() {
         <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
           <a
             className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-
+            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
             target="_blank"
+            rel="noopener noreferrer"
           >
             By{" "}
             <Image
@@ -56,13 +77,13 @@ export default function Home() {
 
       <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
         <a
-          href={loginURL}
+          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
           className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
           target="_blank"
           rel="noopener noreferrer"
         >
           <h2 className={`mb-3 text-2xl font-semibold`}>
-            Login{" "}
+            Docs{" "}
             <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
               -&gt;
             </span>
